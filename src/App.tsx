@@ -1,10 +1,22 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import './App.css';
+import axios from 'axios';
 
+const endPoint = 'http://web.com:8000/todo/todo/'
 function App() {
   const [todoForm, setTodoForm] = useState<any>({})
   const [taskList, setTaskList] = useState<any[]>([])
 
+  const loadTask = async () => {
+    const tasks = await axios.get(endPoint).catch(e => console.error(e))
+    if(tasks) {
+      setTaskList(tasks.data)
+      console.log(tasks)
+    }
+  }
+  useEffect(()=> {
+    loadTask();
+  }, [])
   const handleChange = (e:any) => {
     setTodoForm(
       {
@@ -12,19 +24,24 @@ function App() {
       }
     )
   }
-  const handleSubmit = (e:any) => {
+
+  const handleSubmit = async (e:any) => {
     e.preventDefault()
-    const _tempTaskList = taskList
-    _tempTaskList.push(todoForm)
-    setTaskList(_tempTaskList)
+    const response = await axios.post(endPoint, todoForm).catch(e => console.error(e))
+    if(response) {
+      console.log('Task Saved Successfully')
+      loadTask();
+    }
     setTodoForm({
       title: "",
       description: ""
     })
   }
-  const removeTask = (index:number) => {
-    const taskWithoutIndex = taskList.filter((_, i) => index !== i)
-    setTaskList(taskWithoutIndex) 
+  const removeTask = async (task:any) => {
+    const response = await axios.delete(endPoint + `${task.id}`).catch(e => console.log(e))
+    if(response){
+      loadTask();
+    }
   }
   return (
     <div className="container">
@@ -35,7 +52,7 @@ function App() {
       <div className="todo_items">
       {
           taskList.length < 1 ? <i>Your Task Goes Here</i> : 
-          taskList.map((item, index) => <div key={index} className="task_item" title="Remove Task" onClick={()=>removeTask(index)}>
+          taskList.map((item, index) => <div key={index} className="task_item" title="Remove Task" onClick={()=>removeTask(item)}>
             <div className="title">{item.title}</div>
             <div className="description">{item.description}</div>
           </div>
